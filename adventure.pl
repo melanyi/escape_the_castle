@@ -1,13 +1,37 @@
-/* <The name of this game>, by <your name goes here>. */
+/* Museum Heist, by Daphne Chiu and Melody Lan. */
 
 :- dynamic i_am_at/1, at/2, holding/1.
 :- retractall(at(_, _)), retractall(i_am_at(_)), retractall(alive(_)).
 
-i_am_at(someplace).
+i_am_at(control_room).
 
-path(someplace, n, someplace).
+/* These rules describe the path between locations */ 
+path(control_room, f, main_gallery).
+path(main_gallery, b, control_room).
+path(main_gallery, f, main_hall).
+path(main_hall, f, bathroom). 
+path(main_hall, b, main_gallery).
+path(main_hall, l, storage).
+path(main_hall, r, special_gallery). 
+path(bathroom, b, main_hall).
+path(storage, b, main_hall).
+path(special_gallery, l, main_hall). 
 
-at(thing, someplace).
+/* These rules describe the state of the objets in the game */ 
+off(sink). 
+plugged(sink).
+flows_into(sink,floor) :- plugged(sink).
+wet(X) :- flow(X).
+
+/* These rules describe where objects are located */
+
+at(crowbar, storage). 
+at(mop, storage). 
+at(bucket, storage). 
+at(first_aid, storage). 
+at(tarp, special_gallery). 
+at(suitcase, director_office). 
+at(fake_footage, control_room). 
 
 /* These rules describe how to pick up an object. */
 
@@ -43,16 +67,18 @@ drop(_) :-
         write('You aren''t holding it!'),
         nl.
 
+/* These rules describe other actions */ 
+
 
 /* These rules define the direction letters as calls to go/1. */
 
-n :- go(n).
+f :- go(f).
 
-s :- go(s).
+b :- go(b).
 
-e :- go(e).
+l :- go(l).
 
-w :- go(w).
+r :- go(r).
 
 
 /* This rule tells how to move in a given direction. */
@@ -113,7 +139,7 @@ instructions :-
         write('Enter commands using standard Prolog syntax.'), nl,
         write('Available commands are:'), nl,
         write('start.             -- to start the game.'), nl,
-        write('n.  s.  e.  w.     -- to go in that direction.'), nl,
+        write('f.  b.  l.  r.     -- to go in that direction.'), nl,
         write('take(Object).      -- to pick up an object.'), nl,
         write('drop(Object).      -- to put down an object.'), nl,
         write('look.              -- to look around you again.'), nl,
@@ -126,11 +152,46 @@ instructions :-
 
 start :-
         instructions,
+        write('You are a guard at an art museum.'), nl, 
+        write('You plan to steal the most expensive painting at midnight.'), nl,
+        write('You can turn off the security camera for an hour before the emergency alarm'), nl,
+        write('goes off, and must return to the control room to upload a fake footage to frame'),nl,
+        write('your fellow guard and escape.'), nl,
+        write('Good luck.'), nl, nl, nl,
         look.
 
 
 /* These rules describe the various rooms.  Depending on
    circumstances, a room may have more than one description. */
 
-describe(someplace) :- write('You are someplace.'), nl.
+describe(control_room) :- write('You are at the control room.'), nl, 
+write('Turn off the security camera to begin your heist.'), nl, 
+write('Don''take the fake footage right now.'), nl.
+
+describe(control_room) :- write('press f to go forward to the main gallery'), nl, nl.  
+
+describe(main_gallery) :- write('There''s guard here on night shift, you briefly greet him.'), nl,
+write('In order for the heist to go smoothly, maybe you should distract him?'), nl,
+write('The bathroom sink needs repairing lately, use that fact if you want.'),nl,
+write('press f to go forward to the main hall'),nl,
+write('press b to go back to the control room.'), nl, nl. 
+
+describe(main_gallery) :- wet(floor), write('The guard rushes over to the bathroom. Now it''s the chance to lock him in.').
+
+describe(main_hall) :- write('This is the main hall. There''s nothing of use here.'),nl,
+write('press f to go forward to the bathroom with the broken sink'),nl,
+write('press b to go back to the main gallery.'),nl,
+write('press l to go in the storage closet'),nl,
+write('press r to go down the main hall'). 
+
+describe(storage) :- write('This is the storage closet of the museum'),nl, 
+write('There are some items that could be helpful for your heist. Choose wisely.'). 
+
+describe(bathroom) :- write('This is one of the bathroom in the museum. The sinks are broken.'),nl,
+write('Turn on the taps to flood this bathroom (and maybe other areas too?)').
+
+describe(bathroom) :- on(sink), plugged(sink), wet(floor), write('The sinks are overflowing! Better get the other guard').
+ 
+describe(special_gallery) :- write('You are at the special exhibit gallery. There''s a guard on duty.'),nl,
+write('You need to take the tarp in this room to wrap the painting.'). 
 
