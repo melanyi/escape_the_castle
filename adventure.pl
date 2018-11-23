@@ -82,6 +82,7 @@ turn_on(sink) :-
         assert(on(sink)),
         write('OK. the sink is turned on.'), nl, 
         write('The sink is overflowing, better get the other guard!'),
+        write('Press b to go back to the lobby.')
         !, nl.
 
 turn_on(X) :-
@@ -128,7 +129,6 @@ hit(mop, guard) :-
 hit(_, guard) :-
         write('That was not effective! You''ve been caught!'),
         !, nl.
-
 
 /* These rules define the direction letters as calls to go/1. */
 
@@ -264,3 +264,5 @@ write('press b to go back to the lobby'), nl.
 describe(daVinci_gallery) :- write('You are now in the da Vinci gallery. Steal the painting now.').
 
 
+#TODO: hit with mop and he wakes up part
+#TODO: steal, 
