@@ -1,7 +1,7 @@
 /* Museum Heist, by Daphne Chiu and Melody Lan. */
 
-:- dynamic i_am_at/1, at/2, holding/1.
-:- retractall(at(_, _)), retractall(i_am_at(_)), retractall(alive(_)).
+:- dynamic i_am_at/1, at/2, holding/1, on/1, off/1, unlocked/1, locked/1, conscious/1, unconscious/1. 
+:- retractall(at(_, _)), retractall(i_am_at(_)), retractall(alive(_)). 
 
 i_am_at(control_room).
 
@@ -16,14 +16,21 @@ path(lobby, r, special_gallery).
 path(restroom, b, lobby).
 path(storage, b, lobby).
 path(special_gallery, l, lobby). 
+path(special_gallery, f, daVinci_gallery). 
+path(daVinci_gallery, b, special_gallery). 
+
 
 /* These rules describe the state of the objets in the game */ 
+on(security_camera).
 off(sink). 
-plugged(sink).
-flows_into(sink,floor) :- plugged(sink).
-wet(X) :- flow(X).
-unconscious(Y) :- hit(crowbar, Y).
-unconscious(Y) :- hit(mop, Y).
+conscious(guard). 
+unlocked(restroom_door).
+
+get_date_time_value(time, Value) :-
+    get_time(Stamp),
+    stamp_date_time(Stamp, DateTime, local),
+    date_time_value(time, DateTime, Value).
+
 
 /* These rules describe where objects are located */
 
@@ -33,7 +40,7 @@ at(bucket, storage).
 at(first_aid, storage). 
 at(tarp, special_gallery). 
 at(suitcase, director_office). 
-at(fake_footage, control_room). 
+at(painting, daVinci_gallery). 
 
 /* These rules describe how to pick up an object. */
 
@@ -54,7 +61,6 @@ take(_) :-
         write('I don''t see it here.'),
         nl.
 
-
 /* These rules describe how to put down an object. */
 
 drop(X) :-
@@ -62,7 +68,7 @@ drop(X) :-
         i_am_at(Place),
         retract(holding(X)),
         assert(at(X, Place)),
-        write('OK.'),
+        write('OK.'), 
         !, nl.
 
 drop(_) :-
@@ -70,12 +76,58 @@ drop(_) :-
         nl.
 
 /* These rules describe other actions */ 
-hit(X,Y) :- 
-		conscious(Y),
-		holding(X),
-		write("You hit the other guard with a"),
-		write(X).
+turn_on(sink) :-
+        off(sink),
+        retract(off(sink)),
+        assert(on(sink)),
+        write('OK. the sink is turned on.'), nl, 
+        write('The sink is overflowing, better get the other guard!'),
+        !, nl.
 
+turn_on(X) :-
+        off(X),
+        retract(off(X)),
+        assert(on(X)),
+        write('OK.'), write(X), write(' is turned on.'),
+        !, nl.
+
+turn_on(_) :- write('You can''t do that!'),nl.  
+
+turn_off(X) :-
+        on(X),
+        retract(on(X)),
+        assert(off(X)),
+        write('OK.'), write(X), write(' is turned off.'),
+        !, nl.
+
+turn_off(_) :- write('You can''t do that!'), nl. 
+
+lock(X) :-
+        unlocked(X),
+        retract(unlocked(X)),
+        assert(locked(X)),
+        write('The '), write(X), write(' is locked. Continue with the heist!'),
+        !, nl.
+
+hit(crowbar, guard) :-
+        holding(crowbar), 
+        conscious(guard),
+        retract(conscious(guard)),
+        assert(unconscious(guard)),
+        write('The guard has been knocked out. Continue with the heist!'),
+        !, nl.
+
+hit(mop, guard) :-
+        conscious(guard),
+        holding(mop), 
+        retract(conscious(guard)),
+        assert(unconscious(guard)),
+        write('The guard has been knocked out. Continue with the heist!'),
+        !, nl.
+
+hit(_, guard) :-
+        write('That was not effective! You''ve been caught!'),
+        !, nl.
 
 
 /* These rules define the direction letters as calls to go/1. */
@@ -162,9 +214,7 @@ start :-
         instructions,
         write('You are a guard at an art museum.'), nl, 
         write('You plan to steal the most expensive painting at midnight.'), nl,
-        write('You can turn off the security camera for an hour before the emergency alarm'), nl,
-        write('goes off, and must return to the control room to upload a fake footage to frame'),nl,
-        write('your fellow guard and escape.'), nl,
+        write('You can turn off the security camera for an hour.'), nl,
         write('Good luck.'), nl, nl, nl,
         look.
 
@@ -172,34 +222,45 @@ start :-
 /* These rules describe the various rooms.  Depending on
    circumstances, a room may have more than one description. */
 
-describe(control_room) :- write('You are at the control room.'), nl, 
-write('Turn off the security camera to begin your heist.'), nl, 
-write('Attention: Don''take the fake footage right now!!!'), nl.
+describe(control_room) :- on(security_camera), 
+write('You are at the control room.'), nl, 
+write('Turn off the security camera to begin your heist.'), nl, nl,
+write('press f to go forward to the main gallery').
 
-describe(control_room) :- write('press f to go forward to the main gallery'), nl, nl.  
+describe(main_gallery) :- locked(restroom_door), 
+write('The guard is locked in the restroom, go back into the lobby and continue with your heist!'). 
 
-describe(main_gallery) :- write('There''s guard here on night shift, you briefly greet him.'), nl,
+describe(main_gallery) :- on(sink), write('The guard rushes over to the restroom. Now it''s the chance to lock him in.').
+
+describe(main_gallery) :- off(sink), write('There''s guard here on night shift, you briefly greet him.'), nl,
 write('In order for the heist to go smoothly, maybe you should distract him?'), nl,
-write('The restroom sink needs repairing lately, use that fact if you want.'),nl,
+write('The restroom sink is breaking down lately, use that fact if you want.'), nl,
 write('press f to go forward to the lobby'),nl,
-write('press b to go back to the control room.'), nl, nl. 
+write('press b to go back to the control room'), nl.
 
-describe(main_gallery) :- wet(floor), write('The guard rushes over to the restroom. Now it''s the chance to lock him in.').
 
 describe(lobby) :- write('This is the lobby. There''s nothing of use here.'),nl,
 write('press f to go forward to the restroom with the broken sink'),nl,
-write('press b to go back to the main gallery.'),nl,
+write('press b to go back to the main gallery where there''s a guard on duty.'),nl,
 write('press l to go in the storage closet'),nl,
 write('press r to go down the lobby'). 
 
 describe(storage) :- write('This is the storage closet of the museum'),nl, 
-write('There are some items that could be helpful for your heist. Choose wisely.'). 
+write('There are some items that could be helpful for your heist. Choose wisely.'),
+write('press b to go to the lobby'). 
 
-describe(restroom) :- write('This is one of the restrooms in the museum. The sinks are broken.'),nl,
-write('Turn on the taps to flood this restroom (and maybe other areas too?)').
+describe(restroom) :- locked(restroom_door), on(sink), write('You have locked the guard in. Continue on with your heist.'),nl,
+write('Don''t forget to take useful items from the storage closet.').
 
-describe(restroom) :- on(sink), plugged(sink), wet(floor), write('The sinks are overflowing! Better get the other guard').
- 
+describe(restroom) :- off(sink), write('This is one of the restrooms in the museum. The sinks are broken.'),nl,
+write('Turn on the sink to flood this restroom (and maybe other areas too?)').
+
 describe(special_gallery) :- write('You are at the special exhibit gallery. There''s a guard on duty.'),nl,
-write('You need to take the tarp in this room to wrap the painting.'). 
+write('You need to take the tarp in this room to wrap the painting, but you cannot act with the guard waching.'), nl,
+write('Figure out a plan and remember you took some items from the storage closet.'), nl, 
+write('press f to go forward to the da Vinci gallery where the expensive painting is kept'), nl, 
+write('press b to go back to the lobby'), nl. 
+
+describe(daVinci_gallery) :- write('You are now in the da Vinci gallery. Steal the painting now.').
+
 
