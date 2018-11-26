@@ -18,7 +18,7 @@ path(storage, b, lobby).
 path(special_gallery, l, lobby). 
 path(special_gallery, f, daVinci_gallery). 
 path(daVinci_gallery, b, special_gallery). 
-
+path(special_gallery, b, outside). 
 
 /* These rules describe the state of the objets in the game */ 
 on(security_camera).
@@ -37,9 +37,9 @@ get_date_time_value(time, Value) :-
 at(crowbar, storage). 
 at(mop, storage). 
 at(bucket, storage). 
-at(first_aid, storage). 
+at(tape, storage). 
+at(paintbrush, storage). 
 at(tarp, special_gallery). 
-at(suitcase, director_office). 
 at(painting, daVinci_gallery). 
 
 /* These rules describe how to pick up an object. */
@@ -61,6 +61,7 @@ take(_) :-
         write('I don''t see it here.'),
         nl.
 
+
 /* These rules describe how to put down an object. */
 
 drop(X) :-
@@ -76,12 +77,13 @@ drop(_) :-
         nl.
 
 /* These rules describe other actions */ 
+
 turn_on(sink) :-
         off(sink),
         retract(off(sink)),
         assert(on(sink)),
         write('OK. the sink is turned on.'), nl, 
-        write('The sink is overflowing, better get the other guard!'),
+        write('The sink is overflowing, better get the other guard from the main gallery!'),
         !, nl.
 
 turn_on(X) :-
@@ -91,7 +93,7 @@ turn_on(X) :-
         write('OK.'), write(X), write(' is turned on.'),
         !, nl.
 
-turn_on(_) :- write('You can''t do that!'),nl.  
+turn_on(_) :- write('You can''t do that!'), !, nl.  
 
 turn_off(X) :-
         on(X),
@@ -109,7 +111,8 @@ lock(X) :-
         write('The '), write(X), write(' is locked. Continue with the heist!'),
         !, nl.
 
-hit(crowbar, guard) :-
+hit :-
+        i_am_at(special_gallery), 
         holding(crowbar), 
         conscious(guard),
         retract(conscious(guard)),
@@ -117,7 +120,8 @@ hit(crowbar, guard) :-
         write('The guard has been knocked out. Continue with the heist!'),
         !, nl.
 
-hit(mop, guard) :-
+hit :-
+        i_am_at(special_gallery), 
         conscious(guard),
         holding(mop), 
         retract(conscious(guard)),
@@ -125,8 +129,14 @@ hit(mop, guard) :-
         write('The guard has been knocked out. Continue with the heist!'),
         !, nl.
 
-hit(_, guard) :-
-        write('That was not effective! You''ve been caught!'),
+hit :-
+        i_am_at(special_gallery), 
+        holding(_), 
+        write('That was not effective! You''ve be caught!'),
+        !, nl.
+
+hit :-
+        write('That was not effective!'),
         !, nl.
 
 
@@ -180,6 +190,11 @@ notice_objects_at(_).
 die :-
         finish.
 
+/* This rule tells how to win. */
+
+win :-
+        finish.
+
 
 /* Under UNIX, the "halt." command quits Prolog but does not
    remove the output window. On a PC, however, the window
@@ -198,13 +213,17 @@ instructions :-
         nl,
         write('Enter commands using standard Prolog syntax.'), nl,
         write('Available commands are:'), nl,
-        write('start.             -- to start the game.'), nl,
-        write('f.  b.  l.  r.     -- to go in that direction.'), nl,
-        write('take(Object).      -- to pick up an object.'), nl,
-        write('drop(Object).      -- to put down an object.'), nl,
-        write('look.              -- to look around you again.'), nl,
-        write('instructions.      -- to see this message again.'), nl,
-        write('halt.              -- to end the game and quit.'), nl,
+        write('start.              -- to start the game.'), nl,
+        write('f.  b.  l.  r.      -- to go in that direction.'), nl,
+        write('take(Object).       -- to pick up an object.'), nl,
+        write('drop(Object).       -- to put down an object.'), nl,
+        write('turn_on(Object).    -- to turn on an object'), nl, 
+        write('turn_off(Object).   -- to turn off an object'), nl,
+        write('hit                 -- to hit the guard'),nl,
+        write('lock(restroom_door) -- to lock the restroom door'),nl,
+        write('look.               -- to look around you again.'), nl,
+        write('instructions.       -- to see this message again.'), nl,
+        write('halt.               -- to end the game and quit.'), nl,
         nl.
 
 
@@ -215,6 +234,8 @@ start :-
         write('You are a guard at an art museum.'), nl, 
         write('You plan to steal the most expensive painting at midnight.'), nl,
         write('You can turn off the security camera for an hour.'), nl,
+        write('There are two other guards on night shift with you'), nl,
+        write('be sure to distract them before you act.'), nl, 
         write('Good luck.'), nl, nl, nl,
         look.
 
@@ -228,16 +249,17 @@ write('Turn off the security camera to begin your heist.'), nl, nl,
 write('press f to go forward to the main gallery').
 
 describe(main_gallery) :- locked(restroom_door), 
-write('The guard is locked in the restroom, go back into the lobby and continue with your heist!'). 
+write('The guard is locked in the restroom, go back into the lobby and continue with your heist!'), !. 
 
-describe(main_gallery) :- on(sink), write('The guard rushes over to the restroom. Now it''s the chance to lock him in.').
+describe(main_gallery) :- on(sink), 
+write('The guard rushes over to the restroom. Now it''s the chance to lock him in.'), !.
 
-describe(main_gallery) :- off(sink), write('There''s guard here on night shift, you briefly greet him.'), nl,
+describe(main_gallery) :- off(sink), 
+write('There''s guard here on night shift, you briefly greet him.'), nl,
 write('In order for the heist to go smoothly, maybe you should distract him?'), nl,
 write('The restroom sink is breaking down lately, use that fact if you want.'), nl,
 write('press f to go forward to the lobby'),nl,
-write('press b to go back to the control room'), nl.
-
+write('press b to go back to the control room'), nl, !.
 
 describe(lobby) :- write('This is the lobby. There''s nothing of use here.'),nl,
 write('press f to go forward to the restroom with the broken sink'),nl,
@@ -246,21 +268,45 @@ write('press l to go in the storage closet'),nl,
 write('press r to go down the lobby'). 
 
 describe(storage) :- write('This is the storage closet of the museum'),nl, 
-write('There are some items that could be helpful for your heist. Choose wisely.'),
+write('There are some items that could be helpful for your heist. Choose wisely.'),nl,
 write('press b to go to the lobby'). 
 
-describe(restroom) :- locked(restroom_door), on(sink), write('You have locked the guard in. Continue on with your heist.'),nl,
-write('Don''t forget to take useful items from the storage closet.').
+describe(restroom) :- locked(restroom_door), on(sink), 
+write('You have locked the guard in. Continue on with your heist.'),nl,
+write('Don''t forget to take useful items from the storage closet.'), !.
 
-describe(restroom) :- off(sink), write('This is one of the restrooms in the museum. The sinks are broken.'),nl,
-write('Turn on the sink to flood this restroom (and maybe other areas too?)').
+describe(restroom) :- off(sink), 
+write('This is one of the restrooms in the museum. The sinks are broken.'),nl,
+write('Turn on the sink to flood this restroom'),nl,
+write('press b to go back to the lobby'), !. 
 
-describe(special_gallery) :- write('You are at the special exhibit gallery. There''s a guard on duty.'),nl,
-write('You need to take the tarp in this room to wrap the painting, but you cannot act with the guard waching.'), nl,
+
+describe(special_gallery) :- conscious(guard), holding(painting), 
+write('You''ve been caught by the guard on duty!'), nl, die, !.  
+
+describe(special_gallery) :- conscious(guard), 
+write('You are at the special exhibit gallery. There''s a guard on duty.'),nl,
+write('You need to take the tarp in this room to wrap the painting, but you cannot act with the guard watching.'), nl,
 write('Figure out a plan and remember you took some items from the storage closet.'), nl, 
 write('press f to go forward to the da Vinci gallery where the expensive painting is kept'), nl, 
-write('press b to go back to the lobby'), nl. 
+write('press b to go back to the lobby'), nl, !. 
 
-describe(daVinci_gallery) :- write('You are now in the da Vinci gallery. Steal the painting now.').
+describe(special_gallery) :- unconscious(guard), holding(mop), 
+write('The guard woke up, you''ve been caught!'), nl, die, !.
 
+describe(special_gallery) :- unconscious(guard), unlocked(restroom_door), 
+write('The main gallery guard was suspicious of the lack of response from the special gallery'), nl,  
+write('and he comes to inspect the special gallery. You''ve been caught!'), nl, die, !.
+
+describe(special_gallery) :- unconscious(guard), locked(restroom_door),
+write('press b to leave through the back door now!'), !. 
+
+describe(daVinci_gallery) :- write('You are now in the daVinci gallery. Steal the painting now.'),nl,
+write('press b to go back to the special gallery.'), !. 
+
+describe(outside) :- holding(painting), holding(tarp), off(security_camera), 
+write('You escaped with the painting! You won !!!!!!'), nl, win, !. 
+
+describe(outside) :- holding(painting), holding(tarp), on(security_camera), 
+write('You stole the painting but the security camera was on the whole time. You''ve been caught!'), nl, die, !. 
 
