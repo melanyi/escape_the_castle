@@ -83,7 +83,8 @@ turn_on(sink) :-
         retract(off(sink)),
         assert(on(sink)),
         write('OK. the sink is turned on.'), nl, 
-        write('The sink is overflowing, better get the other guard from the main gallery!'),
+        write('The sink is overflowing, better get the other guard!'),
+        write('Press b to go back to the lobby.')
         !, nl.
 
 turn_on(X) :-
@@ -138,7 +139,6 @@ hit :-
 hit :-
         write('That was not effective!'),
         !, nl.
-
 
 /* These rules define the direction letters as calls to go/1. */
 
@@ -310,3 +310,5 @@ write('You escaped with the painting! You won !!!!!!'), nl, win, !.
 describe(outside) :- holding(painting), holding(tarp), on(security_camera), 
 write('You stole the painting but the security camera was on the whole time. You''ve been caught!'), nl, die, !. 
 
+#TODO: hit with mop and he wakes up part
+#TODO: steal, 
