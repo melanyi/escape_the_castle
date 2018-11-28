@@ -310,5 +310,3 @@ write('You escaped with the painting! You won !!!!!!'), nl, win, !.
 describe(outside) :- holding(painting), holding(tarp), on(security_camera), 
 write('You stole the painting but the security camera was on the whole time. You''ve been caught!'), nl, die, !. 
 
-#TODO: hit with mop and he wakes up part
-#TODO: steal, 
