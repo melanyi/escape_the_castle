@@ -83,8 +83,8 @@ turn_on(sink) :-
         retract(off(sink)),
         assert(on(sink)),
         write('OK. the sink is turned on.'), nl, 
-        write('The sink is overflowing, better get the other guard!'),
-        write('Press b to go back to the lobby.')
+        write('The sink is overflowing, better get the other guard!'),nl,
+        write('Press b to go back to the lobby.'),
         !, nl.
 
 turn_on(X) :-
@@ -245,26 +245,27 @@ start :-
 
 describe(control_room) :- on(security_camera), 
 write('You are at the control room.'), nl, 
-write('Turn off the security camera to begin your heist.'), nl, nl,
+write('Remember to turn off the security camera to begin your heist!'), nl, nl,
 write('press f to go forward to the main gallery').
 
 describe(main_gallery) :- locked(restroom_door), 
-write('The guard is locked in the restroom, go back into the lobby and continue with your heist!'), !. 
+write('The guard is locked in the restroom. You are in the main gallery. Press f to go back to the lobby and continue with your heist!'), !. 
 
 describe(main_gallery) :- on(sink), 
-write('The guard rushes over to the restroom. Now it''s the chance to lock him in.'), !.
+write('The guard rushes over to the restroom. Now is the chance to lock him in. Use command lock(restroom_door).'),nl,nl,
+write('After you lock the restroom door, you can press f to go to the lobby.'),!.
 
 describe(main_gallery) :- off(sink), 
 write('There''s guard here on night shift, you briefly greet him.'), nl,
-write('In order for the heist to go smoothly, maybe you should distract him?'), nl,
+write('In order for the heist to go smoothly, maybe you should distract him? (hint hint)'), nl,
 write('The restroom sink is breaking down lately, use that fact if you want.'), nl,
 write('press f to go forward to the lobby'),nl,
 write('press b to go back to the control room'), nl, !.
 
 describe(lobby) :- write('This is the lobby. There''s nothing of use here.'),nl,
 write('press f to go forward to the restroom with the broken sink'),nl,
-write('press b to go back to the main gallery where there''s a guard on duty.'),nl,
-write('press l to go in the storage closet'),nl,
+write('press b to go back to the main gallery where there''s another guard on duty.'),nl,
+write('press l to go in the storage closet where there are useful items.'),nl,
 write('press r to go down the lobby'). 
 
 describe(storage) :- write('This is the storage closet of the museum'),nl, 
@@ -272,8 +273,9 @@ write('There are some items that could be helpful for your heist. Choose wisely.
 write('press b to go to the lobby'). 
 
 describe(restroom) :- locked(restroom_door), on(sink), 
-write('You have locked the guard in. Continue on with your heist.'),nl,
-write('Don''t forget to take useful items from the storage closet.'), !.
+write('You have locked the guard in. You are in the lobby. Press f to continue on with your heist.'),nl, #????
+write('Don''t forget to take useful items from the storage closet.'), nl,
+write('Press b to go to the lobby.'), !.
 
 describe(restroom) :- off(sink), 
 write('This is one of the restrooms in the museum. The sinks are broken.'),nl,
