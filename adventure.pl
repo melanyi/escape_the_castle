@@ -1,9 +1,10 @@
 /* Museum Heist, by Daphne Chiu and Melody Lan. */
 
-:- dynamic i_am_at/1, at/2, holding/1, on/1, off/1, unlocked/1, locked/1, conscious/1, unconscious/1. 
+:- dynamic i_am_at/1, at/2, holding/1, on/1, off/1, unlocked/1, locked/1, conscious/1, unconscious/1,  time/1. 
 :- retractall(at(_, _)), retractall(i_am_at(_)), retractall(alive(_)). 
 
 i_am_at(control_room).
+time(20). 
 
 /* These rules describe the path between locations */ 
 path(control_room, f, main_gallery).
@@ -20,17 +21,23 @@ path(special_gallery, f, daVinci_gallery).
 path(daVinci_gallery, b, special_gallery). 
 path(special_gallery, b, outside). 
 
+/* These rules describe how time counts down in the game */
+count_time(X, Y) :-
+    time(X),
+    Y is X-1,
+    Y is 1, 
+    write('You have 1 minute left.'), nl.
+
+count_time(X, Y) :-
+    time(X),
+    Y is X-1,
+    write('You have '), write(Y), write(' minutes left.'), nl.
+
 /* These rules describe the state of the objets in the game */ 
 on(security_camera).
 off(sink). 
 conscious(guard). 
 unlocked(restroom_door).
-
-get_date_time_value(time, Value) :-
-    get_time(Stamp),
-    stamp_date_time(Stamp, DateTime, local),
-    date_time_value(time, DateTime, Value).
-
 
 /* These rules describe where objects are located */
 
@@ -83,8 +90,8 @@ turn_on(sink) :-
         retract(off(sink)),
         assert(on(sink)),
         write('OK. the sink is turned on.'), nl, 
-        write('The sink is overflowing, better get the other guard!'),
-        write('Press b to go back to the lobby.')
+        write('The sink is overflowing, better get the other guard!'), nl,
+        write('Press b to go back to the main gallery.'),nl,
         !, nl.
 
 turn_on(X) :-
@@ -96,6 +103,14 @@ turn_on(X) :-
 
 turn_on(_) :- write('You can''t do that!'), !, nl.  
 
+turn_off(security_camera) :-
+        on(security_camera),
+        i_am_at(control_room), 
+        retract(on(security_camera)),
+        assert(off(secruity_camera)),
+        write('OK. security camera is turned off.'),
+        !, nl.
+
 turn_off(X) :-
         on(X),
         retract(on(X)),
@@ -105,12 +120,18 @@ turn_off(X) :-
 
 turn_off(_) :- write('You can''t do that!'), nl. 
 
-lock(X) :-
-        unlocked(X),
-        retract(unlocked(X)),
-        assert(locked(X)),
-        write('The '), write(X), write(' is locked. Continue with the heist!'),
+lock(restroom_door) :-
+        unlocked(restroom_door),
+        retract(unlocked(restroom_door)),
+        assert(locked(restroom_door)),
+        write('The restroom door is locked. Continue with the heist!'),nl,
+        write('press b to go to the main gallery'),nl, 
+        write('press l to go in the storage closet'),nl,
+        write('press r to go down the lobby'), 
         !, nl.
+
+lock(_) :-
+        write('Go to the lobby to lock the restroom door'),nl. 
 
 hit :-
         i_am_at(special_gallery), 
@@ -153,11 +174,19 @@ r :- go(r).
 
 /* This rule tells how to move in a given direction. */
 
+go(_) :-
+        time(0), 
+        die, !. 
+
 go(Direction) :-
         i_am_at(Here),
         path(Here, Direction, There),
         retract(i_am_at(Here)),
         assert(i_am_at(There)),
+        time(X),
+        count_time(X, Y),
+        retract((time(X))),
+        assert(time(Y)),
         !, look.
 
 go(_) :-
@@ -233,7 +262,7 @@ start :-
         instructions,
         write('You are a guard at an art museum.'), nl, 
         write('You plan to steal the most expensive painting at midnight.'), nl,
-        write('You can turn off the security camera for an hour.'), nl,
+        write('You can turn off the security camera for 20 minutes.'), nl,
         write('There are two other guards on night shift with you'), nl,
         write('be sure to distract them before you act.'), nl, 
         write('Good luck.'), nl, nl, nl,
@@ -307,6 +336,8 @@ write('press b to go back to the special gallery.'), !.
 describe(outside) :- holding(painting), holding(tarp), off(security_camera), 
 write('You escaped with the painting! You won !!!!!!'), nl, win, !. 
 
-describe(outside) :- holding(painting), holding(tarp), on(security_camera), 
+describe(outside) :- holding(painting), off(security_camera), 
 write('You stole the painting but the security camera was on the whole time. You''ve been caught!'), nl, die, !. 
 
+describe(outside) :- holding(painting), on(security_camera),
+write('You didn''t wrap the painting and passerbys saw you steal a painting!. You''ve been caught!'), nl, die, !. 
