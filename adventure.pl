@@ -338,7 +338,7 @@ write('press b to go back to the special gallery.'), !.
 describe(outside) :- holding(painting), holding(tarp), off(security_camera), 
 write('You escaped with the painting! You won !!!!!!'), nl, win, !. 
 
-describe(outside) :- holding(painting), off(security_camera), 
+describe(outside) :- holding(painting), holding(tarp), on(security_camera), 
 write('You stole the painting but the security camera was on the whole time. You''ve been caught!'), nl, die, !. 
 
 describe(outside) :- holding(painting), on(security_camera),
