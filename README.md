@@ -10,6 +10,7 @@ You are a guard at an art museum. You plan to steal the most expensive painting 
 
  
 Source code from: http://www.cis.upenn.edu/~matuszek/cis554-2015/Assignments/prolog-02-adventure-game.html
+Course wiki page: https://wiki.ubc.ca/Museum_Heist
 
 
 
